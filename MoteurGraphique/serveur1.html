@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>c'est cool comme projet continue de faire n'importe quoi</title>
+    <style>
+        body {
+            background-color: white;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+    <script>
+        // paramètres du serveur 
+        const IP = "10.187.52.184";
+        const PORT = 12345;
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var canvas = document.getElementById("mon_canvas");
+            var ctx = canvas.getContext("2d");
+
+            // Pour la couleur des points
+            ctx.fillStyle = "black";
+            // Point deck adversaire
+            PosXAdv = canvas.width / 2;
+            PosYAdv = canvas.height / 10 * 0.5;
+            //PtnAdv = ctx.fillRect(PosXAdv, PosYAdv, 5, 5);
+
+            // Point deck personnel
+            PosXPerso = canvas.width / 2;
+            PosYPerso = canvas.height / 10 * 8;
+            //PtnPerso = ctx.fillRect(PosXPerso, PosYPerso, 5, 5);
+
+
+            // Fonction pour dessiner une carte Uno (jaune, vert, rouge et bleu)
+            function createUnoCard(colorCarte, number, x, y, width, height) {
+                // Pour pouvoir dessiner par rapport à la forme je creais d'autre objet 
+                var cardCanvas = document.createElement("canvas");
+                var cardCtx = cardCanvas.getContext("2d");
+
+
+                // Dessiner le fond de la carte
+                cardCtx.fillStyle = colorCarte;
+                cardCtx.fillRect(x, y, width, height);
+
+                // Dessiner des lignes pour le style
+                cardCtx.strokeStyle = "SaddleBrown";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x, y + width);
+                cardCtx.lineTo(x + width, y + height / 4);
+                cardCtx.stroke();
+
+                // Dessiner les lignes au bord
+                cardCtx.strokeStyle = "white";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x + 1, y + height);
+                cardCtx.lineTo(x + 1, y);
+                cardCtx.stroke();
+
+                // Coordonnées du centre de l'ovale
+                var centerX = width / 2;
+                var centerY = height / 2;
+
+                // Rayon horizontal et vertical de l'ovale
+                var radiusX = 40;
+                var radiusY = 25;
+
+                // Dessiner l'ovale
+                cardCtx.beginPath();
+                cardCtx.ellipse(centerX, centerY, radiusX, radiusY, 2.5, 0, 2 * Math.PI);
+                cardCtx.fillStyle = "white";
+                cardCtx.fill();
+                cardCtx.stroke();
+
+                var textWidth;
+
+                // Dessiner le numéro au centre de la carte
+                cardCtx.fillStyle = colorCarte;
+                cardCtx.font = "25px Arial";
+                textWidth = cardCtx.measureText(number).width; //mesure la largeur du texte
+                cardCtx.fillText(number, (width - textWidth) / 2, height / 2 + 10);
+
+
+                // Dessiner le coin supérieur gauche avec le numéro 
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, x + 10, y + 30);
+
+                // Dessiner le coin inférieur gauche avec le numéro en angle
+                cardCtx.save();
+                cardCtx.translate(0, height);
+                cardCtx.rotate(Math.PI); // Rotation de 90 degrés
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, -(width - 10), 30);
+                cardCtx.restore();
+
+                return cardCanvas;
+            }
+
+            // dessiner la carte noir
+            function createOtherUnoCard(number, x, y, width, height) {
+                var cardCanvas = document.createElement("canvas");
+                var cardCtx = cardCanvas.getContext("2d");
+                var textWidth;
+
+                // Dessiner le fond de la carte
+                cardCtx.fillStyle = "red";
+                cardCtx.fillRect(x, y, width / 2, height / 2);
+                cardCtx.fillStyle = "DeepSkyBlue";
+                cardCtx.fillRect(x + width / 2, y, width / 2, height / 2);
+                cardCtx.fillStyle = "gold";
+                cardCtx.fillRect(x, y + height / 2, width / 2, height / 2);
+                cardCtx.fillStyle = "LimeGreen";
+                cardCtx.fillRect(x + width / 2, y + height / 2, width / 2, height / 2);
+
+                // Dessiner des lignes pour le style
+                cardCtx.strokeStyle = "SaddleBrown";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x, y + width);
+                cardCtx.lineTo(x + width, y + height / 4);
+                cardCtx.stroke();
+
+                // Dessiner les triangle a l'angle gauche supérieur
+                cardCtx.strokeStyle = "Maroon";
+                cardCtx.lineWidth = 1;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, (y + height) / 4);
+                cardCtx.lineTo(x, y);
+                cardCtx.lineTo(x + width, y);
+                cardCtx.lineTo(x, (y + height) / 6 * 2);
+                cardCtx.fillStyle = "Maroon";
+                cardCtx.fill();
+                cardCtx.stroke();
+
+                // Dessiner les triangle a l'angle droite inférieur
+                cardCtx.strokeStyle = "Maroon";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, (y + height));
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x + width, (y + height) / 6 * 4);
+                cardCtx.lineTo(x, (y + height));
+                cardCtx.fillStyle = "Maroon";
+                cardCtx.fill();
+                cardCtx.stroke();
+
+                // Dessiner les lignes au bord
+                cardCtx.strokeStyle = "white";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x + 1, y + height);
+                cardCtx.lineTo(x + 1, y);
+                cardCtx.stroke();
+
+                // Coordonnées du centre de l'ovale
+                var centerX = width / 2;
+                var centerY = height / 2;
+
+                // Rayon horizontal et vertical de l'ovale
+                var radiusX = 40;
+                var radiusY = 25;
+
+                // Dessiner l'ovale
+                cardCtx.beginPath();
+                cardCtx.ellipse(centerX, centerY, radiusX, radiusY, 2.5, 0, 2 * Math.PI);
+                cardCtx.fillStyle = "white";
+                cardCtx.fill();
+                cardCtx.stroke();
+
+                // Dessiner le numéro au centre de la carte
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "25px Arial";
+                textWidth = cardCtx.measureText(number).width; //pour centrer le texte sur la carte
+                cardCtx.fillText(number, (width - textWidth) / 2, height / 2 + 10);
+
+                // Dessiner le coin supérieur gauche avec le numéro 
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, x + 10, y + 30);
+
+                // Dessiner le coin inférieur gauche avec le numéro en angle
+                cardCtx.save();
+                cardCtx.translate(0, height);
+                cardCtx.rotate(Math.PI); // Rotation de 90 degrés
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, -(width - 10), 30);
+                cardCtx.restore();
+
+                return cardCanvas;
+            }
+
+            // Dessiner les cartes changements de couleur
+            function createChangeColorCard(number, x, y, width, height) {
+                var cardCanvas = document.createElement("canvas");
+                var cardCtx = cardCanvas.getContext("2d");
+                var textWidth;
+
+                // Dessiner le fond de la carte
+                cardCtx.fillStyle = "red";
+                cardCtx.fillRect(x, y, width / 2, height / 2);
+                cardCtx.fillStyle = "DeepSkyBlue";
+                cardCtx.fillRect(x + width / 2, y, width / 2, height / 2);
+                cardCtx.fillStyle = "gold";
+                cardCtx.fillRect(x, y + height / 2, width / 2, height / 2);
+                cardCtx.fillStyle = "LimeGreen";
+                cardCtx.fillRect(x + width / 2, y + height / 2, width / 2, height / 2);
+
+                //Dessiner des lignes pour le style
+                cardCtx.strokeStyle = "SaddleBrown";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x, y + width);
+                cardCtx.lineTo(x + width, y + height / 4);
+                cardCtx.stroke();
+
+                // Dessiner les triangle aux angles
+                cardCtx.strokeStyle = "Maroon";
+                cardCtx.lineWidth = 1;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, (y + height) / 2);
+                cardCtx.lineTo(x, y);
+                cardCtx.lineTo(x + width, y);
+                cardCtx.lineTo(x + width, (y + height) / 2);
+                cardCtx.lineTo((x + width) / 2, y);
+                cardCtx.lineTo(x, (y + height) / 2);
+                cardCtx.lineTo(x, y + height);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x + width, (y + height) / 2);
+                cardCtx.lineTo((x + width) / 2, y + height);
+                cardCtx.lineTo(x, (y + height) / 2);
+                cardCtx.fillStyle = "Maroon";
+                cardCtx.fill();
+                cardCtx.stroke();
+
+                // Dessiner les lignes au bord
+                cardCtx.strokeStyle = "white";
+                cardCtx.lineWidth = 2;
+                cardCtx.beginPath();
+                cardCtx.moveTo(x, y);
+                cardCtx.lineTo(x + width, y);
+                cardCtx.lineTo(x + width, y + height);
+                cardCtx.lineTo(x + 1, y + height);
+                cardCtx.lineTo(x + 1, y);
+                cardCtx.stroke();
+
+                // Dessiner le numéro au centre de la carte
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "25px Arial";
+                textWidth = cardCtx.measureText(number).width; //pour centrer le texte sur la carte
+                cardCtx.fillText(number, (width - textWidth) / 2, height / 2 + 10);
+
+                // Dessiner le coin supérieur gauche avec le numéro 
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, x + 10, y + 30);
+
+                // Dessiner le coin inférieur gauche avec le numéro en angle
+                cardCtx.save();
+                cardCtx.translate(0, height);
+                cardCtx.rotate(Math.PI); // Rotation de 90 degrés
+                cardCtx.fillStyle = "white";
+                cardCtx.font = "20px Arial";
+                cardCtx.fillText(number, -(width - 10), 30);
+                cardCtx.restore();
+
+                return cardCanvas;
+            }
+
+
+            //************* les cartes ROUGE
+            var CarteRouge = [];
+            for (var n = 0; n <= 1; n++) {
+                for (var i = 0; i <= 9; i++) {
+                    CarteRouge[n * 10 + i] = createUnoCard("red", i, 0, 0, 100, 150);
+                }
+            }
+            CarteRouge[20] = createUnoCard("red", "✖", 0, 0, 100, 150);
+            CarteRouge[21] = createUnoCard("red", "⇅", 0, 0, 100, 150);
+            CarteRouge[22] = createUnoCard("red", "+2", 0, 0, 100, 150);
+            CarteRouge[23] = createUnoCard("red", "✖", 0, 0, 100, 150);
+            CarteRouge[24] = createUnoCard("red", "⇅", 0, 0, 100, 150);
+            CarteRouge[25] = createUnoCard("red", "+2", 0, 0, 100, 150);
+
+            //************* les cartes JAUNE
+            var CarteJaune = [];
+            for (var n = 0; n <= 1; n++) {
+                for (var i = 0; i <= 9; i++) {
+                    CarteJaune[n * 10 + i] = createUnoCard("gold", i, 0, 0, 100, 150);
+                }
+            }
+            CarteJaune[20] = createUnoCard("gold", "✖", 0, 0, 100, 150);
+            CarteJaune[21] = createUnoCard("gold", "⇅", 0, 0, 100, 150);
+            CarteJaune[22] = createUnoCard("gold", "+2", 0, 0, 100, 150);
+            CarteJaune[23] = createUnoCard("gold", "✖", 0, 0, 100, 150);
+            CarteJaune[24] = createUnoCard("gold", "⇅", 0, 0, 100, 150);
+            CarteJaune[25] = createUnoCard("gold", "+2", 0, 0, 100, 150);
+
+            //************* les cartes VERT
+            var CarteVert = [];
+            for (var n = 0; n <= 1; n++) {
+                for (var i = 0; i <= 9; i++) {
+                    CarteVert[n * 10 + i] = createUnoCard("LimeGreen", i, 0, 0, 100, 150);
+                }
+            }
+            CarteVert[20] = createUnoCard("LimeGreen", "✖", 0, 0, 100, 150);
+            CarteVert[21] = createUnoCard("LimeGreen", "⇅", 0, 0, 100, 150);
+            CarteVert[22] = createUnoCard("LimeGreen", "+2", 0, 0, 100, 150);
+            CarteVert[23] = createUnoCard("LimeGreen", "✖", 0, 0, 100, 150);
+            CarteVert[24] = createUnoCard("LimeGreen", "⇅", 0, 0, 100, 150);
+            CarteVert[25] = createUnoCard("LimeGreen", "+2", 0, 0, 100, 150);
+
+            //************* les cartes BLEU
+            var CarteBleu = [];
+            for (var n = 0; n <= 1; n++) {
+                for (var i = 0; i <= 9; i++) {
+                    CarteBleu[n * 10 + i] = createUnoCard("DeepSkyBlue", i, 0, 0, 100, 150);
+                }
+            }
+            CarteBleu[20] = createUnoCard("DeepSkyBlue", "✖", 0, 0, 100, 150);
+            CarteBleu[21] = createUnoCard("DeepSkyBlue", "⇅", 0, 0, 100, 150);
+            CarteBleu[22] = createUnoCard("DeepSkyBlue", "+2", 0, 0, 100, 150);
+            CarteBleu[23] = createUnoCard("DeepSkyBlue", "✖", 0, 0, 100, 150);
+            CarteBleu[24] = createUnoCard("DeepSkyBlue", "⇅", 0, 0, 100, 150);
+            CarteBleu[25] = createUnoCard("DeepSkyBlue", "+2", 0, 0, 100, 150);
+
+            //************* les cartes NOIR
+            var CarteNoir = [];
+            // Dos de la carte
+            CarteNoir[0] = createUnoCard("Maroon", "SINJ", 0, 0, 100, 150);
+
+            // Carte changement de couleur
+            for (var i = 0; i <= 3; i++) {
+                CarteNoir[i + 1] = createChangeColorCard("", 0, 0, 100, 150);
+            }
+
+            // Carte +4
+            for (var i = 0; i <= 3; i++) {
+                CarteNoir[i + 5] = createOtherUnoCard("+4", 0, 0, 100, 150);
+            }
+
+            // Afficher une carte 
+            function displayCard(carte, index, x, y) {
+                var card = carte[index];
+                //ctx.clearRect(0, 0, canvas.width,canvas.height);
+                ctx.drawImage(card, x, y); // Vous pouvez ajuster la position si nécessaire
+
+            }
+
+            //displayCard(CarteNoir, 0, canvas.width / 8 * 7, canvas.height / 2);
+
+            // Sauvegarde le contenu du canvas
+            var initialImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            var pioche = [];
+
+            // Ajouter les cartes rouges à la pioche
+            pioche = pioche.concat(CarteRouge);
+
+            // Ajouter les cartes bleues à la pioche
+            pioche = pioche.concat(CarteBleu);
+
+            // Ajouter les cartes jaunes à la pioche
+            pioche = pioche.concat(CarteJaune);
+
+            // Ajouter les cartes vertes à la pioche
+            pioche = pioche.concat(CarteVert);
+
+            // Ajouter toutes les cartes noires sauf la première à la pioche
+            for (var i = 1; i < CarteNoir.length; i++) {
+                pioche.push(CarteNoir[i]);
+            }
+
+            // Mélanger la pioche
+            shuffleArray(pioche);
+
+            // Fonction pour mélanger un tableau
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            // Fonction pour piocher une carte au hasard
+            function piocherCarte() {
+                if (pioche.length > 0) {
+                    var cartePiochee = pioche.pop(); // Retirer la carte du dessus
+                    console.log("Carte piochée :", cartePiochee);
+                    
+                    return cartePiochee;
+                } else {
+                    console.log("La pioche est vide !");
+                    throw new Error("La pioche est vide !");
+                    alert(error.message);
+
+                    return null; // La pioche est vide
+                }
+            }
+
+            var X = canvas.width / 8 * 7;
+            var Y = canvas.height / 2;
+            var destX;
+            var destY;
+
+            function creampieMe() {
+                
+                destX = PosXPerso
+                destY = PosYPerso
+                // Effacer le canvas                
+                ctx.putImageData(initialImageData, 0, 0);
+
+                // Dessiner la carte noire à la nouvelle position
+                ctx.drawImage(CarteNoir[0], X, Y);
+
+                // Calculer le déplacement vers la destination
+                var dxM = destX - X;
+                var dyM = destY - Y;
+
+                // Déplacer le carré rouge
+                X += dxM * 0.05;  // Ajuster la vitesse de déplacement
+                Y += dyM * 0.05;  // Ajuster la vitesse de déplacement
+
+                // Vérifier si la carte a atteint la position cible
+                if (X <= PosXPerso + 5 || Y >= PosYPerso + 5) {
+                    // Si oui, arrêter l'animation
+                    ctx.putImageData(initialImageData, 0, 0);
+                    // Afficher la carte piochée à une position spécifique
+                    //ctx.drawImage(CarteRouge[1],PosXPerso,PosYPerso);
+
+                    var cartePiochee = piocherCarte();
+                    if (cartePiochee) {
+                        // Afficher la carte piochée à la position du joueur
+                        displayCard([cartePiochee], 0, PosXPerso, PosYPerso);                        
+                    }
+                     
+                    return;
+                }
+
+                requestAnimationFrame(creampieMe);
+            }
+            var animationEnCours = false;
+
+            var btnPioche = document.getElementById("pioche");
+            btnPioche.addEventListener("click", function () {
+                
+                    
+                X = canvas.width / 8 * 7;
+                Y = canvas.height / 2;
+                destX = PosXPerso
+                destY = PosYPerso
+                dxM = destX - X;
+                dyM = destY - Y;
+                creampieMe();
+                
+                
+            });
+
+
+            function creampieYou() {
+                destX = PosXAdv;
+                destY = PosYAdv;
+                // Effacer le canvas                
+                ctx.putImageData(initialImageData, 0, 0);
+
+                // Dessiner la carte noire à la nouvelle position
+                ctx.drawImage(CarteNoir[0], X, Y);
+
+                // Calculer le déplacement vers la destination
+                var dx = destX - X;
+                var dy = destY - Y;
+
+                // Déplacer le carré rouge
+                X += dx * 0.05;  // Ajuster la vitesse de déplacement
+                Y += dy * 0.05;  // Ajuster la vitesse de déplacement
+
+                // Vérifier si la carte a atteint la position cible
+                if ((X <= PosXAdv + 5) || (Y <= PosYAdv + 5)) {
+                    // Si oui, arrêter l'animation     
+                    ctx.putImageData(initialImageData, 0, 0);
+                    //ctx.drawImage(CarteNoir[0], PosXAdv, PosYAdv);
+
+                    var cartePiochee = piocherCarte();
+                    if (cartePiochee) {
+                        // Afficher la carte piochée à la position du joueur
+                        displayCard(CarteNoir, 0, PosXAdv, PosYAdv);
+                    }
+                     
+                    return;
+                }
+
+                requestAnimationFrame(creampieYou);
+            }
+
+            var btnpioche = document.getElementById("pioche2");
+            btnpioche.addEventListener("click",function(){  
+                      
+                X = canvas.width / 8 * 7;
+                Y = canvas.height / 2;
+                destX = PosXAdv
+                destY = PosYAdv
+                dxM = destX - X;
+                dyM = destY - Y;
+                 creampieYou();
+                
+            });
+
+            //************* Créer le deck du joueur *************
+            var deckJoueur = [];
+
+            // Fonction pour piocher des cartes au début du jeu
+            function piocherCartesDebutJeu() {
+                for (var i = 0; i < 7; i++) { // Piocher 7 cartes au début
+                    var cartePiochee = piocherCarte();
+                    if (cartePiochee) {
+                        deckJoueur.push(cartePiochee);
+                    }
+                }
+            }
+
+
+            // Appeler la fonction pour piocher des cartes au début du jeu
+            //piocherCartesDebutJeu();
+
+
+
+            // //afficher un lot de cartes (juste pour le début)
+            // function displayCards(carte, y) {
+            //     for (var i = 0; i < carte.length; i++) {
+            //         var card = carte[i];
+            //         ctx.drawImage(card, i * 160, y); // Positionnez les cartes côte à côte
+            //     }
+            // }
+            // //afficher toutes les cartes rouges
+            // displayCards(CarteRouge, 0);
+            // //afficher toutes les cartes jaunes
+            // displayCards(CarteJaune, 160);
+            // //afficher toutes les cartes vert
+            // displayCards(CarteVert, 320);
+            // //afficher toutes les cartes bleu
+            // displayCards(CarteBleu, 480);
+            // //afficher toutes les cartes noir (dos de carte, +4 et changement de couleur)
+            // displayCards(CarteNoir, 640);
+
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Les élements boutons pour essayer  -->
+    <input type='button' id="pioche" value="pioche"></input>
+    <input type='button' id="pioche2" value="pioche2"></input>
+    <!-- l'élement canvas -->
+    <canvas id="mon_canvas" width="1800" height="900"></canvas>
+</body>
+
+</html>
